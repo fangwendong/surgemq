@@ -2,16 +2,22 @@ package acl
 
 import (
 	"errors"
+
+	"go.uber.org/zap"
 )
 
 type GetAuthFunc func(userName, topic string) interface{}
 
 var getAuth GetAuthFunc //callback get authInfo of user
 
+type ClientInfo struct {
+	UserName string
+}
+
 type Authenticator interface {
-	CheckPub(userName, topic string) bool
-	CheckSub(userName, topic string) bool
-	ProcessUnSub(userName, topic string)
+	CheckPub(clientInfo *ClientInfo, topic string) bool
+	CheckSub(clientInfo *ClientInfo, topic string) bool
+	ProcessUnSub(clientInfo *ClientInfo, topic string)
 }
 
 var providers = make(map[string]Authenticator)
@@ -20,16 +26,19 @@ type TopicAclManger struct {
 	p Authenticator
 }
 
-func (this *TopicAclManger) CheckPub(userName, topic string) bool {
-	return this.p.CheckPub(userName, topic)
+func (this *TopicAclManger) CheckPub(clientInfo *ClientInfo, topic string) bool {
+	logger.Debug("pub", zap.String("user_name", clientInfo.UserName))
+	return this.p.CheckPub(clientInfo, topic)
 }
 
-func (this *TopicAclManger) CheckSub(userName, topic string) bool {
-	return this.p.CheckSub(userName, topic)
+func (this *TopicAclManger) CheckSub(clientInfo *ClientInfo, topic string) bool {
+	logger.Debug("sub", zap.String("user_name", clientInfo.UserName))
+	return this.p.CheckSub(clientInfo, topic)
 }
 
-func (this *TopicAclManger) ProcessUnSub(userName, topic string) {
-	this.p.ProcessUnSub(userName, topic)
+func (this *TopicAclManger) ProcessUnSub(clientInfo *ClientInfo, topic string) {
+	logger.Debug("unSub", zap.String("user_name", clientInfo.UserName))
+	this.p.ProcessUnSub(clientInfo, topic)
 	return
 }
 

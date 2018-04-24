@@ -24,17 +24,17 @@ func init() {
 	Register(TopicSetAuthType, new(topicSetAuth))
 }
 
-func (this TopicAlwaysVerify) CheckPub(userName, topic string) bool {
+func (this TopicAlwaysVerify) CheckPub(clientInfo *ClientInfo, topic string) bool {
 	return true
 
 }
 
-func (this TopicAlwaysVerify) CheckSub(userName, topic string) bool {
+func (this TopicAlwaysVerify) CheckSub(clientInfo *ClientInfo, topic string) bool {
 	return true
 
 }
 
-func (this TopicAlwaysVerify) ProcessUnSub(userName, topic string) {
+func (this TopicAlwaysVerify) ProcessUnSub(clientInfo *ClientInfo, topic string) {
 }
 
 type topicNumAuth struct {
@@ -44,24 +44,24 @@ type topicNumAuth struct {
 
 var _ Authenticator = (*topicNumAuth)(nil)
 
-func (this *topicNumAuth) CheckPub(userName, topic string) bool {
+func (this *topicNumAuth) CheckPub(clientInfo *ClientInfo, topic string) bool {
 	return true
 }
 
-func (this *topicNumAuth) CheckSub(userName, topic string) bool {
-	key := fmt.Sprintf(userTopicKeyFmt, userName, topic)
+func (this *topicNumAuth) CheckSub(clientInfo *ClientInfo, topic string) bool {
+	key := fmt.Sprintf(userTopicKeyFmt, clientInfo.UserName, topic)
 	if _, ok := this.topicUserM.Load(key); ok {
 		return true
 	}
 
-	totalLimit, ok := getAuth(userName, topic).(int)
+	totalLimit, ok := getAuth(clientInfo.UserName, topic).(int)
 	if !ok || totalLimit == 0 {
 		return false
 	}
 
-	totalNow, ok := this.topicTotalNowM.Load(userName)
+	totalNow, ok := this.topicTotalNowM.Load(clientInfo.UserName)
 	if !ok {
-		this.topicTotalNowM.Store(userName, 1)
+		this.topicTotalNowM.Store(clientInfo.UserName, 1)
 		this.topicUserM.Store(key, true)
 		return true
 	}
@@ -70,20 +70,20 @@ func (this *topicNumAuth) CheckSub(userName, topic string) bool {
 		return false
 	}
 
-	this.topicTotalNowM.Store(userName, totalNow.(int)+1)
+	this.topicTotalNowM.Store(clientInfo.UserName, totalNow.(int)+1)
 	this.topicUserM.Store(key, true)
 	return true
 }
 
-func (this *topicNumAuth) ProcessUnSub(userName, topic string) {
-	key := fmt.Sprintf(userTopicKeyFmt, userName, topic)
+func (this *topicNumAuth) ProcessUnSub(clientInfo *ClientInfo, topic string) {
+	key := fmt.Sprintf(userTopicKeyFmt, clientInfo.UserName, topic)
 	if _, ok := this.topicUserM.Load(key); !ok {
 		return
 	}
 	this.topicUserM.Delete(key)
-	totalNow, ok := this.topicTotalNowM.Load(userName)
+	totalNow, ok := this.topicTotalNowM.Load(clientInfo.UserName)
 	if ok {
-		this.topicTotalNowM.Store(userName, totalNow.(int)-1)
+		this.topicTotalNowM.Store(clientInfo.UserName, totalNow.(int)-1)
 	}
 }
 
@@ -93,17 +93,17 @@ type topicSetAuth struct {
 
 var _ Authenticator = (*topicSetAuth)(nil)
 
-func (this *topicSetAuth) CheckPub(userName, topic string) bool {
-	return this.CheckSub(userName, topic)
+func (this *topicSetAuth) CheckPub(clientInfo *ClientInfo, topic string) bool {
+	return this.CheckSub(clientInfo, topic)
 }
 
-func (this *topicSetAuth) CheckSub(userName, topic string) bool {
-	key := fmt.Sprintf(userTopicKeyFmt, userName, topic)
+func (this *topicSetAuth) CheckSub(clientInfo *ClientInfo, topic string) bool {
+	key := fmt.Sprintf(userTopicKeyFmt, clientInfo.UserName, topic)
 	if _, ok := this.topicM.Load(key); ok {
 		return true
 	}
 
-	exists, ok := getAuth(userName, topic).(bool)
+	exists, ok := getAuth(clientInfo.UserName, topic).(bool)
 	if !ok {
 		return false
 	}
@@ -115,6 +115,6 @@ func (this *topicSetAuth) CheckSub(userName, topic string) bool {
 	return exists
 }
 
-func (this *topicSetAuth) ProcessUnSub(userName, topic string) {
+func (this *topicSetAuth) ProcessUnSub(clientInfo *ClientInfo, topic string) {
 	return
 }
