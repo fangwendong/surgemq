@@ -96,6 +96,25 @@ func Test2(t *testing.T) {
 	}
 }
 
+func TestTggw(t *testing.T) {
+	mqttServer := &service.Server{
+		KeepAlive:        300,           // seconds
+		ConnectTimeout:   2,             // seconds
+		SessionsProvider: "mem",         // keeps sessions in memory
+		Authenticator:    "mockSuccess", // always succeed
+		TopicsProvider:   "mem",         // keeps topic subscriptions in memory
+		AclProvider:      acl.TopicSetAuthType,
+		GetAuthFunc: func(userName, topic string) interface{} {
+
+			return userName == topic
+		},
+	}
+
+	if err := mqttServer.ListenAndServe("tcp://127.0.0.1:8080"); err != nil {
+		fmt.Println("mqtt error", zap.Error(err))
+	}
+}
+
 func Test3(t *testing.T) {
 	mqttServer := &service.Server{
 		KeepAlive:        300,           // seconds
