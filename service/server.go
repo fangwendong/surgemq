@@ -30,6 +30,7 @@ import (
 	"github.com/fangwendong/surgemq/topics"
 	"github.com/surge/glog"
 	"github.com/surgemq/message"
+	"go.uber.org/zap"
 )
 
 var (
@@ -110,11 +111,13 @@ type Server struct {
 	// A indicator on whether this server has already checked configuration
 	configOnce sync.Once
 
-	subs        []interface{}
-	qoss        []byte
-	GetAuthFunc acl.GetAuthFunc
-	AclProvider string
-	aclManger   *acl.TopicAclManger
+	subs            []interface{}
+	qoss            []byte
+	GetAuthFunc     acl.GetAuthFunc
+	VerifyTokenFunc auth.VerifyTokenFunc
+	AclProvider     string
+	aclManger       *acl.TopicAclManger
+	Logger          *zap.Logger
 }
 
 // ListenAndServe listents to connections on the URI requested, and handles any
@@ -294,12 +297,16 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 	}
 
 	// Authenticate the user, if error, return error and exit
-	if err = this.authMgr.Authenticate(string(req.Username()), string(req.Password())); err != nil {
+	//password存着token
+	verify, clientInfo := this.authMgr.Authenticate(string(req.Password()))
+	if !verify {
 		resp.SetReturnCode(message.ErrBadUsernameOrPassword)
 		resp.SetSessionPresent(false)
 		writeMessage(conn, resp)
 		return nil, err
 	}
+
+	svc.setClientInfo(clientInfo)
 
 	if req.KeepAlive() == 0 {
 		req.SetKeepAlive(minKeepAlive)
@@ -349,6 +356,19 @@ func (this *Server) handleConnection(c io.Closer) (svc *service, err error) {
 	return svc, nil
 }
 
+func (this *service) setClientInfo(clientInfo *auth.ClientInfo) {
+
+	//todo 兼容旧版本没有token的
+	if clientInfo == nil {
+		return
+	}
+
+	this.clientInfo = &acl.ClientInfo{
+		UserName: clientInfo.UserName,
+		UserId:   clientInfo.UserId,
+	}
+}
+
 func (this *Server) checkConfiguration() error {
 	var err error
 
@@ -373,7 +393,7 @@ func (this *Server) checkConfiguration() error {
 			this.Authenticator = "mockSuccess"
 		}
 
-		this.authMgr, err = auth.NewManager(this.Authenticator)
+		this.authMgr, err = auth.NewManager(this.Authenticator, this.VerifyTokenFunc)
 		if err != nil {
 			return
 		}

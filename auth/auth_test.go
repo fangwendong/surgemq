@@ -14,24 +14,28 @@
 
 package auth
 
-type mockAuthenticator bool
-
-var _ Authenticator = (*mockAuthenticator)(nil)
-
-var (
-	mockSuccessAuthenticator mockAuthenticator = true
-	mockFailureAuthenticator mockAuthenticator = false
+import (
+	"fmt"
+	"testing"
 )
 
-func init() {
-	Register("mockSuccess", mockSuccessAuthenticator)
-	Register("mockFailure", mockFailureAuthenticator)
-}
-
-func (this mockAuthenticator) Authenticate(id string, cred interface{}) error {
-	if this == true {
-		return nil
+func TestGm3Authenticator(t *testing.T) {
+	mp := map[string]*ClientInfo{
+		"xxcx": &ClientInfo{
+			"fwd",
+			"1",
+		},
 	}
 
-	return ErrAuthFailure
+	f := func(token string) *ClientInfo {
+		return mp[token]
+	}
+	manger, err := NewManager("gm3Auth", f)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	verify, clientInfo := manger.Authenticate("xcx")
+	fmt.Println(verify, clientInfo)
 }

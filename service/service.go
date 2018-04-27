@@ -119,11 +119,12 @@ type service struct {
 	intmp  []byte
 	outtmp []byte
 
-	subs      []interface{}
-	qoss      []byte
-	rmsgs     []*message.PublishMessage
-	aclManger *acl.TopicAclManger
-	userName  string
+	subs       []interface{}
+	qoss       []byte
+	rmsgs      []*message.PublishMessage
+	aclManger  *acl.TopicAclManger
+	userName   string
+	clientInfo *acl.ClientInfo
 }
 
 func (this *service) start() error {
@@ -230,7 +231,7 @@ func (this *service) stop() {
 			glog.Errorf("(%s/%d): %v", this.cid(), this.id, err)
 		} else {
 			for _, t := range topics {
-				this.aclManger.ProcessUnSub(this.userName, t)
+				this.aclManger.ProcessUnSub(this.clientInfo, t)
 				if err := this.topicsMgr.Unsubscribe([]byte(t), &this.onpub); err != nil {
 					glog.Errorf("(%s): Error unsubscribing topic %q: %v", this.cid(), t, err)
 				}

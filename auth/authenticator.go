@@ -26,8 +26,15 @@ var (
 	providers = make(map[string]Authenticator)
 )
 
+type ClientInfo struct {
+	UserName string
+	UserId   string
+	Verifyed bool
+}
+
 type Authenticator interface {
-	Authenticate(id string, cred interface{}) error
+	Authenticate(token string) (bool, *ClientInfo)
+	SetVerifyFunc(f VerifyTokenFunc)
 }
 
 func Register(name string, provider Authenticator) {
@@ -50,15 +57,20 @@ type Manager struct {
 	p Authenticator
 }
 
-func NewManager(providerName string) (*Manager, error) {
+func NewManager(providerName string, verifyTokenFunc VerifyTokenFunc) (*Manager, error) {
 	p, ok := providers[providerName]
 	if !ok {
 		return nil, fmt.Errorf("session: unknown provider %q", providerName)
 	}
+	p.SetVerifyFunc(verifyTokenFunc)
 
 	return &Manager{p: p}, nil
 }
 
-func (this *Manager) Authenticate(id string, cred interface{}) error {
-	return this.p.Authenticate(id, cred)
+func (this *Manager) Authenticate(token string) (bool, *ClientInfo) {
+	return this.p.Authenticate(token)
+}
+
+func (this *Manager) SetVerifyFunc(f VerifyTokenFunc) {
+	this.p.SetVerifyFunc(f)
 }

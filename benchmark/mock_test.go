@@ -128,7 +128,7 @@ func Test3(t *testing.T) {
 		},
 	}
 
-	if err := mqttServer.ListenAndServe("tcp://127.0.0.1:8081"); err != nil {
+	if err := mqttServer.ListenAndServe("tcp://127.0.0.1:8080"); err != nil {
 		fmt.Println("mqtt error", zap.Error(err))
 	}
 }

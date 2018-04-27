@@ -3,6 +3,8 @@ package acl
 import (
 	"fmt"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 type topicSetAuth struct {
@@ -12,29 +14,38 @@ type topicSetAuth struct {
 
 var _ Authenticator = (*topicSetAuth)(nil)
 
-func (this *topicSetAuth) CheckPub(userName, topic string) bool {
-	return this.CheckSub(userName, topic)
+func (this *topicSetAuth) CheckPub(clientInfo *ClientInfo, topic string) bool {
+	return this.CheckSub(clientInfo, topic)
 }
 
-func (this *topicSetAuth) CheckSub(userName, topic string) bool {
+func (this *topicSetAuth) CheckSub(clientInfo *ClientInfo, topic string) (success bool) {
+	defer func() {
+		Logger.Debug("[sub]", zap.String("userId", clientInfo.UserId), zap.Bool("success", success))
+	}()
+
+	userName := clientInfo.Token
 	key := fmt.Sprintf(userTopicKeyFmt, userName, topic)
 	if _, ok := this.topicM.Load(key); ok {
-		return true
+		success = true
+		return
 	}
 
-	exists, ok := this.f(userName, topic).(bool)
+	var ok bool
+	success, ok = this.f(userName, topic).(bool)
 	if !ok {
-		return false
+		success = false
+		return
 	}
 
-	if exists {
+	if success {
 		this.topicM.Store(key, true)
 	}
 
-	return exists
+	return
 }
 
-func (this *topicSetAuth) ProcessUnSub(userName, topic string) {
+func (this *topicSetAuth) ProcessUnSub(clientInfo *ClientInfo, topic string) {
+	Logger.Debug("[unSub]", zap.String("userId", clientInfo.UserId))
 	return
 }
 

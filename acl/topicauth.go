@@ -2,6 +2,8 @@ package acl
 
 import (
 	"errors"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -13,10 +15,16 @@ const (
 
 type GetAuthFunc func(userName, topic string) interface{}
 
+type ClientInfo struct {
+	Token    string
+	UserName string
+	UserId   string
+}
+
 type Authenticator interface {
-	CheckPub(userName, topic string) bool
-	CheckSub(userName, topic string) bool
-	ProcessUnSub(userName, topic string)
+	CheckPub(clientInfo *ClientInfo, topic string) bool
+	CheckSub(clientInfo *ClientInfo, topic string) bool
+	ProcessUnSub(clientInfo *ClientInfo, topic string)
 	SetAuthFunc(f GetAuthFunc)
 }
 
@@ -26,16 +34,17 @@ type TopicAclManger struct {
 	p Authenticator
 }
 
-func (this *TopicAclManger) CheckPub(userName, topic string) bool {
-	return this.p.CheckPub(userName, topic)
+func (this *TopicAclManger) CheckPub(clientInfo *ClientInfo, topic string) bool {
+	return this.p.CheckPub(clientInfo, topic)
 }
 
-func (this *TopicAclManger) CheckSub(userName, topic string) bool {
-	return this.p.CheckSub(userName, topic)
+func (this *TopicAclManger) CheckSub(clientInfo *ClientInfo, topic string) bool {
+	Logger.Debug("sub", zap.String("token", clientInfo.Token))
+	return this.p.CheckSub(clientInfo, topic)
 }
 
-func (this *TopicAclManger) ProcessUnSub(userName, topic string) {
-	this.p.ProcessUnSub(userName, topic)
+func (this *TopicAclManger) ProcessUnSub(clientInfo *ClientInfo, topic string) {
+	this.p.ProcessUnSub(clientInfo, topic)
 	return
 }
 
@@ -44,6 +53,9 @@ func (this *TopicAclManger) SetAuthFunc(f GetAuthFunc) {
 }
 
 func NewTopicAclManger(providerName string, f GetAuthFunc) (*TopicAclManger, error) {
+	if len(providerName) == 0 || f == nil {
+		return nil, errors.New("providerName or f invalid !")
+	}
 	v, ok := providers[providerName]
 	if !ok {
 		return nil, errors.New("providers not exist this name:" + providerName)

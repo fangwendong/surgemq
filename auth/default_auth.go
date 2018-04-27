@@ -14,28 +14,25 @@
 
 package auth
 
-import (
-	"testing"
+type mockAuthenticator bool
 
-	"github.com/stretchr/testify/require"
+var _ Authenticator = (*mockAuthenticator)(nil)
+
+var (
+	mockSuccessAuthenticator mockAuthenticator = true
+	mockFailureAuthenticator mockAuthenticator = false
 )
 
-func TestMockSuccessAuthenticator(t *testing.T) {
-	require.NoError(t, mockSuccessAuthenticator.Authenticate("", ""))
-
-	require.NoError(t, providers["mockSuccess"].Authenticate("", ""))
-
-	mgr, err := NewManager("mockSuccess")
-	require.NoError(t, err)
-	require.NoError(t, mgr.Authenticate("", ""))
+func init() {
+	Register("mockSuccess", mockSuccessAuthenticator)
+	Register("mockFailure", mockFailureAuthenticator)
 }
 
-func TestMockFailureAuthenticator(t *testing.T) {
-	require.Error(t, mockFailureAuthenticator.Authenticate("", ""))
+func (this mockAuthenticator) Authenticate(token string) (bool, *ClientInfo) {
 
-	require.Error(t, providers["mockFailure"].Authenticate("", ""))
+	return this == mockSuccessAuthenticator, nil
+}
 
-	mgr, err := NewManager("mockFailure")
-	require.NoError(t, err)
-	require.Error(t, mgr.Authenticate("", ""))
+func (this mockAuthenticator) SetVerifyFunc(f VerifyTokenFunc) {
+
 }
