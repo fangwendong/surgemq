@@ -33,6 +33,6 @@ func (this mockAuthenticator) Authenticate(token string) (bool, *ClientInfo) {
 	return this == mockSuccessAuthenticator, nil
 }
 
-func (this mockAuthenticator) SetVerifyFunc(f VerifyTokenFunc) {
+func (this mockAuthenticator) SetVerifyFunc(f AuthFunc) {
 
 }

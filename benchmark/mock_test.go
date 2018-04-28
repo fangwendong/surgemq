@@ -86,7 +86,7 @@ func Test2(t *testing.T) {
 		Authenticator:    "mockSuccess", // always succeed
 		TopicsProvider:   "mem",         // keeps topic subscriptions in memory
 		AclProvider:      acl.TopicNumAuthType,
-		GetAuthFunc: func(userName, topic string) interface{} {
+		TopicAclFunc: func(userName, topic string) interface{} {
 			return 1
 		},
 	}
@@ -104,7 +104,7 @@ func TestTggw(t *testing.T) {
 		Authenticator:    "mockSuccess", // always succeed
 		TopicsProvider:   "mem",         // keeps topic subscriptions in memory
 		AclProvider:      acl.TopicSetAuthType,
-		GetAuthFunc: func(userName, topic string) interface{} {
+		TopicAclFunc: func(userName, topic string) interface{} {
 
 			return userName == topic
 		},
@@ -123,7 +123,7 @@ func Test3(t *testing.T) {
 		Authenticator:    "mockSuccess", // always succeed
 		TopicsProvider:   "mem",         // keeps topic subscriptions in memory
 		AclProvider:      acl.TopicSetAuthType,
-		GetAuthFunc: func(userName, topic string) interface{} {
+		TopicAclFunc: func(userName, topic string) interface{} {
 			return true
 		},
 	}

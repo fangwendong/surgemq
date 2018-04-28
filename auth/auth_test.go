@@ -22,8 +22,9 @@ import (
 func TestGm3Authenticator(t *testing.T) {
 	mp := map[string]*ClientInfo{
 		"xxcx": &ClientInfo{
-			"fwd",
-			"1",
+			Token:    "fwd",
+			UserName: "v1",
+			UserId:   1234,
 		},
 	}
 

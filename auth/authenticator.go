@@ -27,14 +27,15 @@ var (
 )
 
 type ClientInfo struct {
+	Token    string
 	UserName string
 	UserId   string
-	Verifyed bool
+	Verified bool
 }
 
 type Authenticator interface {
 	Authenticate(token string) (bool, *ClientInfo)
-	SetVerifyFunc(f VerifyTokenFunc)
+	SetVerifyFunc(f AuthFunc)
 }
 
 func Register(name string, provider Authenticator) {
@@ -57,7 +58,7 @@ type Manager struct {
 	p Authenticator
 }
 
-func NewManager(providerName string, verifyTokenFunc VerifyTokenFunc) (*Manager, error) {
+func NewManager(providerName string, verifyTokenFunc AuthFunc) (*Manager, error) {
 	p, ok := providers[providerName]
 	if !ok {
 		return nil, fmt.Errorf("session: unknown provider %q", providerName)
@@ -71,6 +72,6 @@ func (this *Manager) Authenticate(token string) (bool, *ClientInfo) {
 	return this.p.Authenticate(token)
 }
 
-func (this *Manager) SetVerifyFunc(f VerifyTokenFunc) {
+func (this *Manager) SetVerifyFunc(f AuthFunc) {
 	this.p.SetVerifyFunc(f)
 }

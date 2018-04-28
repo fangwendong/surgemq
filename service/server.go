@@ -111,13 +111,13 @@ type Server struct {
 	// A indicator on whether this server has already checked configuration
 	configOnce sync.Once
 
-	subs            []interface{}
-	qoss            []byte
-	GetAuthFunc     acl.GetAuthFunc
-	VerifyTokenFunc auth.VerifyTokenFunc
-	AclProvider     string
-	aclManger       *acl.TopicAclManger
-	Logger          *zap.Logger
+	subs         []interface{}
+	qoss         []byte
+	TopicAclFunc acl.GetAuthFunc
+	AuthFunc     auth.AuthFunc
+	AclProvider  string
+	aclManger    *acl.TopicAclManger
+	Logger       *zap.Logger
 }
 
 // ListenAndServe listents to connections on the URI requested, and handles any
@@ -393,7 +393,7 @@ func (this *Server) checkConfiguration() error {
 			this.Authenticator = "mockSuccess"
 		}
 
-		this.authMgr, err = auth.NewManager(this.Authenticator, this.VerifyTokenFunc)
+		this.authMgr, err = auth.NewManager(this.Authenticator, this.AuthFunc)
 		if err != nil {
 			return
 		}
@@ -420,7 +420,7 @@ func (this *Server) checkConfiguration() error {
 			this.AclProvider = acl.TopicAlwaysVerifyType
 		}
 
-		this.aclManger, err = acl.NewTopicAclManger(this.AclProvider, this.GetAuthFunc)
+		this.aclManger, err = acl.NewTopicAclManger(this.AclProvider, this.TopicAclFunc)
 
 		return
 	})

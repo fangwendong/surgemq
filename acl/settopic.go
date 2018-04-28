@@ -23,15 +23,15 @@ func (this *topicSetAuth) CheckSub(clientInfo *ClientInfo, topic string) (succes
 		Logger.Debug("[sub]", zap.String("userId", clientInfo.UserId), zap.Bool("success", success))
 	}()
 
-	userName := clientInfo.Token
-	key := fmt.Sprintf(userTopicKeyFmt, userName, topic)
+	token := clientInfo.Token
+	key := fmt.Sprintf(userTopicKeyFmt, token, topic)
 	if _, ok := this.topicM.Load(key); ok {
 		success = true
 		return
 	}
 
 	var ok bool
-	success, ok = this.f(userName, topic).(bool)
+	success, ok = this.f(token, topic).(bool)
 	if !ok {
 		success = false
 		return
